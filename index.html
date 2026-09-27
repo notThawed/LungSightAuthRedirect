@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -13,17 +11,13 @@
     <title>LungSight - Completing Setup</title>
 
     <style>
-
         body {
             margin: 0;
             min-height: 100vh;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             font-family: Arial, sans-serif;
-
             background: #f7fbff;
             color: #1f2937;
         }
@@ -36,32 +30,24 @@
         .spinner {
             width: 42px;
             height: 42px;
-
             margin: 0 auto 20px;
-
             border: 4px solid #dbeafe;
             border-top-color: #2563eb;
-
             border-radius: 50%;
-
             animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
-
             to {
                 transform: rotate(360deg);
             }
-
         }
 
         p {
             margin: 0;
             color: #64748b;
         }
-
     </style>
-
 </head>
 
 <body>
@@ -76,41 +62,21 @@
 
     </div>
 
-
     <script>
-
         (function () {
 
             const hash = window.location.hash;
 
-            /*
-             * No authentication fragment.
-             * Return to LungSight.
-             */
-
             if (!hash) {
-
                 window.location.replace(
                     "https://lungsight-ai.streamlit.app/"
                 );
-
                 return;
             }
-
-
-            /*
-             * Convert the URL fragment into
-             * readable parameters.
-             *
-             * Example:
-             *
-             * #access_token=ABC&refresh_token=XYZ
-             */
 
             const params = new URLSearchParams(
                 hash.substring(1)
             );
-
 
             const accessToken =
                 params.get("access_token");
@@ -121,11 +87,6 @@
             const type =
                 params.get("type");
 
-
-            /*
-             * Make sure both Supabase tokens exist.
-             */
-
             if (!accessToken || !refreshToken) {
 
                 window.location.replace(
@@ -135,26 +96,18 @@
                 return;
             }
 
-
-            /*
-             * Build the Streamlit query string.
-             */
-
             const query =
                 new URLSearchParams();
-
 
             query.set(
                 "access_token",
                 accessToken
             );
 
-
             query.set(
                 "refresh_token",
                 refreshToken
             );
-
 
             if (type) {
 
@@ -165,20 +118,16 @@
 
             }
 
-
-            /*
-             * Send the user back to Streamlit.
-             */
+            const destination =
+                "https://lungsight-ai.streamlit.app/?" +
+                query.toString();
 
             window.location.replace(
-                "https://lungsight-ai.streamlit.app/?" +
-                query.toString()
+                destination
             );
 
         })();
-
     </script>
 
 </body>
-
 </html>
