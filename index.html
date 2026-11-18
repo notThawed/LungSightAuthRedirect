@@ -118,9 +118,23 @@
 
             }
 
+            // Choose a destination based on the environment.
+            const environment = new URLSearchParams(
+                window.location.search
+            ).get("env");
+            
+            const BASE_URLS = {
+                local: "http://localhost:8501/",
+                production: "https://lungsight-ai.streamlit.app/"
+            };
+            
+            const baseUrl =
+                environment === "local"
+                    ? BASE_URLS.local
+                    : BASE_URLS.production;
+            
             const destination =
-                "https://lungsight-ai.streamlit.app/?" +
-                query.toString();
+                baseUrl + "?" + query.toString();
 
             window.location.replace(
                 destination
