@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,6 +26,7 @@
         .container {
             text-align: center;
             padding: 40px;
+            max-width: 440px;
         }
 
         .spinner {
@@ -46,6 +48,12 @@
         p {
             margin: 0;
             color: #64748b;
+            line-height: 1.6;
+        }
+
+        .error {
+            color: #b91c1c;
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -54,9 +62,9 @@
 
     <div class="container">
 
-        <div class="spinner"></div>
+        <div class="spinner" id="loadingSpinner"></div>
 
-        <p>
+        <p id="statusMessage">
             Completing your LungSight account setup...
         </p>
 
@@ -64,81 +72,147 @@
 
     <script>
         (function () {
+            "use strict";
 
-            const hash = window.location.hash;
+            // ==========================================
+            // 1. ENVIRONMENT CONFIGURATION
+            // ==========================================
 
-            if (!hash) {
-                window.location.replace(
-                    "https://lungsight-ai.streamlit.app/"
-                );
-                return;
-            }
-
-            const params = new URLSearchParams(
-                hash.substring(1)
-            );
-
-            const accessToken =
-                params.get("access_token");
-
-            const refreshToken =
-                params.get("refresh_token");
-
-            const type =
-                params.get("type");
-
-            if (!accessToken || !refreshToken) {
-
-                window.location.replace(
-                    "https://lungsight-ai.streamlit.app/"
-                );
-
-                return;
-            }
-
-            const query =
-                new URLSearchParams();
-
-            query.set(
-                "access_token",
-                accessToken
-            );
-
-            query.set(
-                "refresh_token",
-                refreshToken
-            );
-
-            if (type) {
-
-                query.set(
-                    "type",
-                    type
-                );
-
-            }
-
-            // Choose a destination based on the environment.
-            const environment = new URLSearchParams(
+            const urlParams = new URLSearchParams(
                 window.location.search
-            ).get("env");
-            
+            );
+
+            const environment = (
+                urlParams.get("env") || "production"
+            ).toLowerCase();
+
             const BASE_URLS = {
                 local: "http://localhost:8501/",
                 production: "https://lungsight-ai.streamlit.app/"
             };
-            
+
             const baseUrl =
                 environment === "local"
                     ? BASE_URLS.local
                     : BASE_URLS.production;
-            
-            const destination =
-                baseUrl + "?" + query.toString();
 
-            window.location.replace(
-                destination
+            // ==========================================
+            // 2. READ SUPABASE CALLBACK
+            // ==========================================
+
+            const hash = window.location.hash;
+
+            const hashParams = new URLSearchParams(
+                hash.startsWith("#")
+                    ? hash.substring(1)
+                    : ""
             );
+
+            const accessToken = hashParams.get(
+                "access_token"
+            );
+
+            const refreshToken = hashParams.get(
+                "refresh_token"
+            );
+
+            const authType = (
+                hashParams.get("type") ||
+                urlParams.get("type") ||
+                "invite"
+            ).toLowerCase();
+
+            const authError =
+                hashParams.get("error") ||
+                urlParams.get("error");
+
+            const errorCode =
+                hashParams.get("error_code") ||
+                urlParams.get("error_code");
+
+            // ==========================================
+            // 3. HELPER: REDIRECT TO LUNGSIGHT
+            // ==========================================
+
+            function redirectToApp(params) {
+                const destination = new URL(baseUrl);
+
+                params.forEach(function (value, key) {
+                    destination.searchParams.set(
+                        key,
+                        value
+                    );
+                });
+
+                // Do not retain the Supabase fragment
+                // in the GitHub Pages browser history.
+                window.history.replaceState(
+                    null,
+                    "",
+                    window.location.pathname +
+                    window.location.search
+                );
+
+                window.location.replace(
+                    destination.toString()
+                );
+            }
+
+            // ==========================================
+            // 4. HANDLE SUPABASE ERRORS
+            // ==========================================
+
+            if (authError || errorCode) {
+                const params = new URLSearchParams();
+
+                params.set(
+                    "auth_error",
+                    "invalid_or_expired_link"
+                );
+
+                params.set("type", authType);
+
+                redirectToApp(params);
+                return;
+            }
+
+            // ==========================================
+            // 5. HANDLE VALID AUTH TOKENS
+            // ==========================================
+
+            if (accessToken && refreshToken) {
+                const params = new URLSearchParams();
+
+                params.set(
+                    "access_token",
+                    accessToken
+                );
+
+                params.set(
+                    "refresh_token",
+                    refreshToken
+                );
+
+                params.set("type", authType);
+
+                redirectToApp(params);
+                return;
+            }
+
+            // ==========================================
+            // 6. HANDLE MISSING / EXPIRED TOKENS
+            // ==========================================
+
+            const params = new URLSearchParams();
+
+            params.set(
+                "auth_error",
+                "invalid_or_expired_link"
+            );
+
+            params.set("type", authType);
+
+            redirectToApp(params);
 
         })();
     </script>
